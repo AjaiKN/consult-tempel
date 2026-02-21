@@ -1,0 +1,5 @@
+#+TITLE: consult-tempel
+
+A [[https://github.com/minad/consult][consult]]ing-read interface for [[https://github.com/minad/tempel][tempel]].
+
+This package is based on [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]] by [[https://github.com/mohkale][mohsin kaleem]].
