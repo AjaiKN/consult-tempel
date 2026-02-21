@@ -8,7 +8,7 @@
 ;; Author: mohsin kaleem <mohkale@kisara.moe>
 ;; Package-Requires: ((emacs "27.1") (tempel "1.11") (consult "0.16"))
 ;; Version: 0.2
-;; URL: https://github.com/mohkale/consult-tempel
+;; URL: https://github.com/AjaiKN/consult-tempel
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
