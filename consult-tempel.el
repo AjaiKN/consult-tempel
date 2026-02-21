@@ -170,14 +170,26 @@ this function removes the matching prefix from the preview."
              template)))
    templates))
 
-(defun consult-tempel--annotate (candidates)
-  (lambda (cand)
-    (when-let* ((template (cdr (assoc cand candidates)))
-                (mode-name (or (consult-tempel--template-mode-name template) "")))
-      (concat
-       " "
-       (propertize " " 'display `(space :align-to (- right ,(+ 1 (length mode-name)))))
-       mode-name))))
+(defun consult-tempel--annotate (candidates cand)
+  (when-let* ((template (cdr (assoc cand candidates)))
+              (mode-name (or (consult-tempel--template-mode-name template) "")))
+    (concat
+     " "
+     (propertize " " 'display `(space :align-to (+ left 20)))
+     ;; from `tempel--annotate'
+     (if tempel-insert-annotation
+         (let ((ann (truncate-string-to-width
+                     (string-trim
+                      (replace-regexp-in-string
+                       "[ \t\n\r]+" " "
+                       (or (plist-get (tempel--template-plist template) :ann)
+                           (tempel--print-template template))))
+                     tempel-insert-annotation)))
+           (add-face-text-property 0 (length ann) 'completions-annotations t ann)
+           ann)
+       "")
+     (propertize " " 'display `(space :align-to (- right ,(+ 1 (length mode-name)))))
+     mode-name)))
 
 (defun consult-tempel--read-template ()
   "Backend implementation of `consult-tempel'.
@@ -193,14 +205,13 @@ returns a snippet template from the user."
              (buffer-undo-list t) ; Prevent querying user (and showing previews) from updating the undo-history
              (buffer-read-only t)
              ((buffer-local-value 'buffer-read-only consult-tempel--buffer) t)
-             (candidates
-              (consult-tempel--candidates
-               (or (tempel--templates)
-                   (user-error "consult-tempel: No templates for %s" major-mode)))))
+             (templates (or (tempel--templates)
+                            (user-error "consult-tempel: No templates for %s" major-mode)))
+             (candidates (consult-tempel--candidates templates)))
     (consult--read
      candidates
      :prompt "Choose a snippet: "
-     :annotate (consult-tempel--annotate candidates)
+     :annotate (apply-partially #'consult-tempel--annotate candidates)
      :initial
      (when consult-tempel-use-thing-at-point
        (thing-at-point 'symbol))
