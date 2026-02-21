@@ -55,7 +55,8 @@ applies when `consult-tempel-use-thing-at-point' is t."
   :type 'boolean
   :group 'consult-tempel)
 
-(defvar consult-tempel--buffer nil)
+(defvar consult-tempel--buffer nil
+  "The buffer that the snippet will be inserted into.")
 
 (defun consult-tempel--expand-template (template region)
   "Expand TEMPLATE at point saving REGION."
@@ -150,6 +151,7 @@ this function removes the matching prefix from the preview."
             (redisplay)))))))
 
 (defun consult-tempel--template-mode-name (template)
+  "The name of the mode that the given TEMPLATE comes from."
   (cl-loop for (mode . templates) in tempel--path-templates
            when (and (symbolp mode)
                      (memq template templates)
@@ -171,6 +173,9 @@ this function removes the matching prefix from the preview."
    templates))
 
 (defun consult-tempel--annotate (candidates cand)
+  "Annotate the candidate CAND with the mode and template contents.
+
+CANDIDATES is the alist that was passed to `consult--read'."
   (when-let* ((template (cdr (assoc cand candidates)))
               (mode-name (or (consult-tempel--template-mode-name template) "")))
     (concat
