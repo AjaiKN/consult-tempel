@@ -55,6 +55,8 @@ applies when `consult-tempel-use-thing-at-point' is t."
   :type 'boolean
   :group 'consult-tempel)
 
+(defvar consult-tempel--buffer nil)
+
 (defun consult-tempel--expand-template (template region)
   "Expand TEMPLATE at point saving REGION."
   (deactivate-mark)
@@ -150,14 +152,17 @@ this function removes the matching prefix from the preview."
 (defun consult-tempel--template-mode-name (template)
   (cl-loop for (mode . templates) in tempel--path-templates
            when (and (symbolp mode)
-                     (memq template templates))
+                     (memq template templates)
+                     (or (null consult-tempel--buffer)
+                         (eq mode 'fundamental-mode)
+                         (with-current-buffer consult-tempel--buffer (derived-mode-p mode))))
            return (symbol-name mode)))
 
 (defun consult-tempel--candidates (templates)
   "Convert TEMPLATES into candidates for `completing-read'."
   (mapcar
    (lambda (template)
-     (let* ((group-name (consult-tempel--template-mode-name template)))
+     (let* ((group-name (or (consult-tempel--template-mode-name template) "")))
        (cons (concat
               (propertize group-name 'consult--prefix-group group-name)
               " "
@@ -184,26 +189,26 @@ This function doesn't actually expand the snippet, it only reads and then
 returns a snippet template from the user."
   (barf-if-buffer-read-only)
 
-  (let* ((buffer (current-buffer))
-         (buffer-undo-list t) ; Prevent querying user (and showing previews) from updating the undo-history
-         (buffer-read-only t)
-         (candidates
-          (consult-tempel--candidates
-           (or (tempel--templates)
-               (user-error "consult-tempel: No templates for %s" major-mode)))))
-    (cl-letf (((buffer-local-value 'buffer-read-only buffer) t))
-      (consult--read
-       candidates
-       :prompt "Choose a snippet: "
-       :annotate (consult-tempel--annotate candidates)
-       :initial
-       (when consult-tempel-use-thing-at-point
-         (thing-at-point 'symbol))
-       :lookup 'consult--lookup-cdr
-       :require-match t
-       :state (consult-tempel--preview)
-       :group 'consult--prefix-group
-       :category 'tempel))))
+  (cl-letf* ((consult-tempel--buffer (current-buffer))
+             (buffer-undo-list t) ; Prevent querying user (and showing previews) from updating the undo-history
+             (buffer-read-only t)
+             ((buffer-local-value 'buffer-read-only consult-tempel--buffer) t)
+             (candidates
+              (consult-tempel--candidates
+               (or (tempel--templates)
+                   (user-error "consult-tempel: No templates for %s" major-mode)))))
+    (consult--read
+     candidates
+     :prompt "Choose a snippet: "
+     :annotate (consult-tempel--annotate candidates)
+     :initial
+     (when consult-tempel-use-thing-at-point
+       (thing-at-point 'symbol))
+     :lookup 'consult--lookup-cdr
+     :require-match t
+     :state (consult-tempel--preview)
+     :group 'consult--prefix-group
+     :category 'tempel)))
 
 ;;;###autoload
 (defun consult-tempel ()
