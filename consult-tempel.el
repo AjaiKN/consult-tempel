@@ -141,7 +141,8 @@ this function removes the matching prefix from the preview."
 
           (when (and template (not (eq action 'return)))
             (unwind-protect
-                (consult-tempel--expand-template template region)
+                (ignore-errors
+                  (consult-tempel--expand-template template region))
               (unwind-protect
                   nil
                   ;; (mapc #'yas--commit-snippet
